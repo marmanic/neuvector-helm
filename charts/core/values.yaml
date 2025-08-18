@@ -657,7 +657,7 @@ crdwebhooksvc:
   enabled: true
 
 crdwebhook:
-  enabled: true
+  enabled: false
   type: ClusterIP
 
 lease:
