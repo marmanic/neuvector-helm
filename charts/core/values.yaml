@@ -1,348 +1,295 @@
-# Default values for neuvector.
-# This is a YAML-formatted file.
-# Declare variables to be passed into the templates.
-
-openshift: false
-
-registry: docker.io
-tag: 5.4.5
-oem:
-imagePullSecrets:
-psp: false
-rbac: true # required for rancher authentication
-serviceAccount: default
-leastPrivilege: false
-global: # required for rancher authentication (https://<Rancher_URL>/)
-  cattle:
-    url:
-  azure:
-    enabled: false
-    identity:
-      clientId: "DONOTMODIFY" # Azure populates this value at deployment time
-    marketplace:
-      planId: "DONOTMODIFY" # Azure populates this value at deployment time
-    extension:
-      resourceId: "DONOTMODIFY" # application's Azure Resource ID, Azure populates this value at deployment time
-    serviceAccount: csp
-    imagePullSecrets:
-    images:
-      neuvector_csp_pod:
-        tag: latest
-        image: neuvector-billing-azure-by-suse-llc
-        registry: registry.suse.de/suse/sle-15-sp5/update/pubclouds/images
-        imagePullPolicy: IfNotPresent
-      controller:
-        tag: 5.2.4
-        image: controller
-        registry: docker.io/neuvector
-      manager:
-        tag: 5.2.4
-        image: manager
-        registry: docker.io/neuvector
-      enforcer:
-        tag: 5.2.4
-        image: enforcer
-        registry: docker.io/neuvector
-
-  aws:
-    enabled: false
-    accountNumber: ""
-    roleName: ""
-    serviceAccount: csp
-    annotations: {}
-    imagePullSecrets:
-    image:
-      digest: ""
-      repository: neuvector/neuvector-csp-adapter
-      tag: latest
-      imagePullPolicy: IfNotPresent
-
-# Set a bootstrap password. If leave empty, default admin password used.
-bootstrapPassword: ""
-
+admissionwebhook:
+  type: ClusterIP
 autoGenerateCert: true
-
-defaultValidityPeriod: 365
-
-internal: 
-  certmanager: # enable when cert-manager is installed for the internal certificates
-    enabled: false
-    secretname: neuvector-internal
-  autoGenerateCert: true
-  autoRotateCert: true
-
+bootstrapPassword: ''
+bottlerocket:
+  enabled: false
+  runtimePath: /run/dockershim.sock
+containerd:
+  enabled: false
+  path: /var/run/containerd/containerd.sock
 controller:
-  # If false, controller will not be installed
-  enabled: true
-  annotations: {}
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  image:
-    repository: neuvector/controller
-    imagePullPolicy: IfNotPresent
-    hash:
-  replicas: 3
-  disruptionbudget: 0
-  schedulerName:
-  priorityClassName:
-  podLabels: {}
-  podAnnotations: {}
-  searchRegistries:
-  env: []
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
+        - podAffinityTerm:
             labelSelector:
               matchExpressions:
                 - key: app
                   operator: In
                   values:
                     - neuvector-controller-pod
-            topologyKey: "kubernetes.io/hostname"
-  tolerations: []
-  topologySpreadConstraints: []
-  nodeSelector:
-    {}
-    # key1: value1
-    # key2: value2
+            topologyKey: kubernetes.io/hostname
+          weight: 100
+  annotations: {}
   apisvc:
-    type:
     annotations: {}
-    nodePort:  
-    # OpenShift Route configuration
-    # Controller supports HTTPS only, so edge termination not supported
+    nodePort: null
     route:
       enabled: false
+      host: null
       termination: passthrough
-      host:
-      tls:
-        #certificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #caCertificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #destinationCACertificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #key: |
-        #  -----BEGIN PRIVATE KEY-----
-        #  -----END PRIVATE KEY-----
-  ranchersso: # required for rancher authentication
-    enabled: false
-  pvc:
-    enabled: false
-    existingClaim: false
-    accessModes:
-      - ReadWriteMany
-    storageClass:
-    capacity:
+      tls: null
+    type: null
   azureFileShare:
     enabled: false
-    secretName:
-    shareName:
+    secretName: null
+    shareName: null
   certificate:
-    secret: ""
     keyFile: tls.key
     pemFile: tls.pem
-    #key: |
-    #  -----BEGIN PRIVATE KEY-----
-    #  -----END PRIVATE KEY-----
-    #certificate: |
-    #  -----BEGIN CERTIFICATE-----
-    #  -----END CERTIFICATE-----
-  internal: # this is used for internal communication. Please use the SAME CA for all the components (controller, scanner, adapter and enforcer)
-    certificate:
-      secret: ""
-      keyFile: tls.key
-      pemFile: tls.crt
-      caFile: ca.crt # must be the same CA for all internal.
-  federation:
-    mastersvc:
-      type:
-      loadBalancerIP:
-      clusterIP:
-      nodePort: # Must be a valid NodePort: 30000-32767
-      externalTrafficPolicy:
-      internalTrafficPolicy:
-      # Federation Master Ingress
-      ingress:
-        enabled: false
-        host: # MUST be set, if ingress is enabled
-        ingressClassName: ""
-        path: "/" # or this could be "/api", but might need "rewrite-target" annotation
-        annotations:
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-          # ingress.kubernetes.io/rewrite-target: /
-        tls: false
-        secretName:
-      annotations: {}
-      # OpenShift Route configuration
-      # Controller supports HTTPS only, so edge termination not supported
-      route:
-        enabled: false
-        termination: passthrough
-        host:
-        tls:
-          #certificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #caCertificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #destinationCACertificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #key: |
-          #  -----BEGIN PRIVATE KEY-----
-          #  -----END PRIVATE KEY-----
-    managedsvc:
-      type:
-      loadBalancerIP:
-      clusterIP:
-      nodePort: # Must be a valid NodePort: 30000-32767
-      externalTrafficPolicy:
-      internalTrafficPolicy:
-      # Federation Managed Ingress
-      ingress:
-        enabled: false
-        host: # MUST be set, if ingress is enabled
-        ingressClassName: ""
-        path: "/" # or this could be "/api", but might need "rewrite-target" annotation
-        annotations:
-          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-          # ingress.kubernetes.io/rewrite-target: /
-        tls: false
-        secretName:
-      annotations: {}
-      # OpenShift Route configuration
-      # Controller supports HTTPS only, so edge termination not supported
-      route:
-        enabled: false
-        termination: passthrough
-        host:
-        tls:
-          #certificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #caCertificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #destinationCACertificate: |
-          #  -----BEGIN CERTIFICATE-----
-          #  -----END CERTIFICATE-----
-          #key: |
-          #  -----BEGIN PRIVATE KEY-----
-          #  -----END PRIVATE KEY-----
-  ingress:
-    enabled: false
-    host: # MUST be set, if ingress is enabled
-    ingressClassName: ""
-    path: "/" # or this could be "/api", but might need "rewrite-target" annotation
-    annotations:
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-      # ingress.kubernetes.io/rewrite-target: /
-    tls: false
-    secretName:
-  resources:
-    {}
-    # limits:
-    #   cpu: 400m
-    #   memory: 2792Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 2280Mi
-  configmap:
-    enabled: false
-    data:
-      # passwordprofileinitcfg.yaml: |
-      #  ...
-      # roleinitcfg.yaml: |
-      #  ...
-      # ldapinitcfg.yaml: |
-      #  ...
-      # oidcinitcfg.yaml: |
-      # ...
-      # samlinitcfg.yaml: |
-      # ...
-      # sysinitcfg.yaml: |
-      # ...
-      # userinitcfg.yaml: |
-      # ...
-      # fedinitcfg.yaml: |
-      # ...
-  secret:
-    # NOTE: files defined here have preferrence over the ones defined in the configmap section
-    enabled: false
-    data:
-      # passwordprofileinitcfg.yaml:
-      #  ...
-      # roleinitcfg.yaml:
-      #  ...
-      # ldapinitcfg.yaml:
-      #   directory: OpenLDAP
-      #   ...
-      # oidcinitcfg.yaml:
-      #   Issuer: https://...
-      #   ...
-      # samlinitcfg.yaml:
-      #   ...
-      # sysinitcfg.yaml:
-      #   ...
-      userinitcfg.yaml:
-        users:
-        - Fullname: admin
-          Password:
-          Role: admin
+    secret: ''
   certupgrader:
     env: []
-    # The cronjob schedule that cert-upgrader will run to check and rotate internal certificate.
-    # default: "" (off)
-    schedule: ""
     imagePullPolicy: IfNotPresent
-    timeout: 3600 
-    priorityClassName:
-    resources:
-      {}
-      # limits:
-      #   cpu: 100m
-      #   memory: 256Mi
-      # requests:
-      #   cpu: 100m
-      #   memory: 256Mi
-    podLabels: {}
+    nodeSelector: {}
     podAnnotations: {}
+    podLabels: {}
+    priorityClassName: null
+    runAsUser: null
+    schedule: ''
+    timeout: 3600
     tolerations: []
-    nodeSelector:
-      {}
-      # key1: value1
-      # key2: value2
-    runAsUser: # MUST be set for Rancher hardened cluster
-  prime:
+  configmap:
+    data: null
     enabled: false
-    image:
-      repository: neuvector/compliance-config
-      imagePullPolicy: IfNotPresent
-      tag: 1.0.6
-      hash:
-enforcer:
-  # If false, enforcer will not be installed
+  disruptionbudget: 0
   enabled: true
-  image:
-    repository: neuvector/enforcer
-    imagePullPolicy: IfNotPresent
-    hash:
-  updateStrategy:
-    type: RollingUpdate
-  priorityClassName:
-  podLabels: {}
-  podAnnotations: {}
   env: []
+  federation:
+    managedsvc:
+      annotations: {}
+      clusterIP: null
+      externalTrafficPolicy: null
+      ingress:
+        annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+        enabled: false
+        host: null
+        ingressClassName: ''
+        path: /
+        secretName: null
+        tls: false
+      internalTrafficPolicy: null
+      loadBalancerIP: null
+      nodePort: null
+      route:
+        enabled: false
+        host: null
+        termination: passthrough
+        tls: null
+      type: null
+    mastersvc:
+      annotations: {}
+      clusterIP: null
+      externalTrafficPolicy: null
+      ingress:
+        annotations:
+          nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+        enabled: false
+        host: null
+        ingressClassName: ''
+        path: /
+        secretName: null
+        tls: false
+      internalTrafficPolicy: null
+      loadBalancerIP: null
+      nodePort: null
+      route:
+        enabled: false
+        host: null
+        termination: passthrough
+        tls: null
+      type: null
+  image:
+    hash: null
+    imagePullPolicy: IfNotPresent
+    repository: rancher/neuvector-controller
+    tag: 5.4.5
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    enabled: true
+    host: nvc01.bulletproof-labs.com
+    ingressClassName: ''
+    path: /
+    secretName: null
+    tls: false
+  internal:
+    certificate:
+      caFile: ca.crt
+      keyFile: tls.key
+      pemFile: tls.crt
+      secret: ''
+  nodeSelector: {}
+  podAnnotations: {}
+  podLabels: {}
+  prime:
+    enabled: true
+    image:
+      hash: null
+      imagePullPolicy: IfNotPresent
+      repository: rancher/neuvector-compliance-config
+      tag: 1.0.6
+  priorityClassName: null
+  pvc:
+    accessModes:
+      - ReadWriteMany
+    capacity: null
+    enabled: false
+    existingClaim: false
+    storageClass: null
+  ranchersso:
+    enabled: true
+  replicas: 3
+  resources: {}
+  schedulerName: null
+  searchRegistries: null
+  secret:
+    data:
+      userinitcfg.yaml:
+        users:
+          - Fullname: admin
+            Password: null
+            Role: admin
+    enabled: false
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  tolerations: []
+  topologySpreadConstraints: []
+crdwebhook:
+  enabled: true
+  type: ClusterIP
+crdwebhooksvc:
+  enabled: true
+crio:
+  enabled: false
+  path: /var/run/crio/crio.sock
+cve:
+  adapter:
+    affinity: {}
+    certificate:
+      keyFile: tls.key
+      pemFile: tls.crt
+      secret: ''
+    enabled: false
+    env: []
+    harbor:
+      protocol: https
+      secretName: null
+    image:
+      hash: null
+      imagePullPolicy: IfNotPresent
+      repository: rancher/neuvector-registry-adapter
+      tag: 0.1.8
+    ingress:
+      annotations:
+        nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      enabled: false
+      host: null
+      ingressClassName: ''
+      path: /
+      secretName: null
+      tls: false
+    internal:
+      certificate:
+        caFile: ca.crt
+        keyFile: tls.key
+        pemFile: tls.crt
+        secret: ''
+    nodeSelector: {}
+    podAnnotations: {}
+    podLabels: {}
+    priorityClassName: null
+    resources: {}
+    route:
+      enabled: true
+      host: null
+      termination: passthrough
+      tls: null
+    runAsUser: null
+    svc:
+      annotations: {}
+      loadBalancerIP: null
+      type: ClusterIP
+    tolerations: []
+  scanner:
+    affinity: {}
+    dockerPath: ''
+    enabled: true
+    env: []
+    image:
+      hash: null
+      imagePullPolicy: Always
+      registry: ''
+      repository: rancher/neuvector-scanner
+      tag: '6'
+    internal:
+      certificate:
+        caFile: ca.crt
+        keyFile: tls.key
+        pemFile: tls.crt
+        secret: ''
+    nodeSelector: {}
+    podAnnotations: {}
+    podLabels: {}
+    priorityClassName: null
+    replicas: 3
+    resources: {}
+    runAsUser: null
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+      type: RollingUpdate
+    tolerations: []
+    topologySpreadConstraints: []
+    volumeMounts: null
+    volumes: null
+  updater:
+    cacert: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    enabled: true
+    image:
+      hash: null
+      imagePullPolicy: IfNotPresent
+      registry: ''
+      repository: rancher/neuvector-updater
+      tag: 0.0.4
+    nodeSelector: {}
+    podAnnotations: {}
+    podLabels: {}
+    priorityClassName: null
+    resources: {}
+    runAsUser: null
+    schedule: 0 0 * * *
+    secure: false
+    tolerations: []
+defaultValidityPeriod: 365
+docker:
+  path: /var/run/docker.sock
+enforcer:
+  enabled: true
+  env: []
+  image:
+    hash: null
+    imagePullPolicy: IfNotPresent
+    repository: rancher/neuvector-enforcer
+    tag: 5.4.5
+  internal:
+    certificate:
+      caFile: ca.crt
+      keyFile: tls.key
+      pemFile: tls.crt
+      secret: ''
+  podAnnotations: {}
+  podLabels: {}
+  priorityClassName: null
+  resources: {}
+  securityContext:
+    privileged: true
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
@@ -350,315 +297,84 @@ enforcer:
       key: node-role.kubernetes.io/control-plane
     - effect: NoSchedule
       key: node-role.kubernetes.io/etcd
-  resources:
-    {}
-    # limits:
-    #   cpu: 400m
-    #   memory: 2792Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 2280Mi
-  internal: # this is used for internal communication. Please use the SAME CA for all the components (controller, scanner, adapter and enforcer)
-    certificate:
-      secret: "" 
-      keyFile: tls.key
-      pemFile: tls.crt
-      caFile: ca.crt # must be the same CA for all internal.
-  securityContext:
-    privileged: true
-manager:
-  # If false, manager will not be installed
-  enabled: true
-  image:
-    repository: neuvector/manager
-    imagePullPolicy: IfNotPresent
-    hash:
-  priorityClassName:
-  env:
-    ssl: true
-    envs: []
-  #      - name: CUSTOM_PAGE_HEADER_COLOR
-  #        value: "#FFFFFF"
-  #      - name: CUSTOM_PAGE_FOOTER_COLOR
-  #        value: "#FFFFFF"
-  svc:
-    type: ClusterIP
-    nodePort:  
-    loadBalancerIP:
-    annotations:
-      {}
-      # azure
-      # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-      # service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "apps-subnet"
-  # OpenShift Route configuration
-  # Make sure manager env ssl is false for edge termination
-  route:
-    enabled: true
-    termination: passthrough
-    host:
-    tls:
-      #certificate: |
-      #  -----BEGIN CERTIFICATE-----
-      #  -----END CERTIFICATE-----
-      #caCertificate: |
-      #  -----BEGIN CERTIFICATE-----
-      #  -----END CERTIFICATE-----
-      #destinationCACertificate: |
-      #  -----BEGIN CERTIFICATE-----
-      #  -----END CERTIFICATE-----
-      #key: |
-      #  -----BEGIN PRIVATE KEY-----
-      #  -----END PRIVATE KEY-----
-  certificate:
-    secret: ""
-    keyFile: tls.key
-    pemFile: tls.pem
-    #key: |
-    #  -----BEGIN PRIVATE KEY-----
-    #  -----END PRIVATE KEY-----
-    #certificate: |
-    #  -----BEGIN CERTIFICATE-----
-    #  -----END CERTIFICATE-----
-  ingress:
-    enabled: false
-    host: # MUST be set, if ingress is enabled
-    ingressClassName: ""
-    path: "/"
-    annotations:
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-      # kubernetes.io/ingress.class: my-nginx
-      # nginx.ingress.kubernetes.io/whitelist-source-range: "1.1.1.1"
-      # nginx.ingress.kubernetes.io/rewrite-target: /
-      # nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
-      # only for end-to-end tls conf - ingress-nginx accepts backend self-signed cert
-    tls: false
-    secretName: # my-tls-secret
-  resources:
-    {}
-    # limits:
-    #   cpu: 400m
-    #   memory: 2792Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 2280Mi
-  topologySpreadConstraints: []
-  affinity: {}
-  podLabels: {}
-  podAnnotations: {}
-  tolerations: []
-  nodeSelector:
-    {}
-    # key1: value1
-    # key2: value2
-  runAsUser: # MUST be set for Rancher hardened cluster
-  probes:
-    enabled: false
-    timeout: 1
-    periodSeconds: 10
-    startupFailureThreshold: 30
-
-cve:
-  adapter:
-    enabled: false
-    image:
-      repository: neuvector/registry-adapter
-      imagePullPolicy: IfNotPresent
-      tag: 0.1.8
-      hash:
-    priorityClassName:
-    resources:
-      {}
-      # limits:
-      #   cpu: 400m
-      #   memory: 512Mi
-      # requests:
-      #   cpu: 100m
-      #   memory: 1024Mi
-    affinity: {}
-    podLabels: {}
-    podAnnotations: {}
-    env: []
-    tolerations: []
-    nodeSelector:
-      {}
-      # key1: value1
-      # key2: value2
-    runAsUser: # MUST be set for Rancher hardened cluster
-    ## TLS cert/key.  If absent, TLS cert/key automatically generated will be used.
-    ##
-    ## default: (none)
-    certificate:
-      secret: ""
-      keyFile: tls.key
-      pemFile: tls.crt
-    #key: |
-    #  -----BEGIN PRIVATE KEY-----
-    #  -----END PRIVATE KEY-----
-    #certificate: |
-    #  -----BEGIN CERTIFICATE-----
-    #  -----END CERTIFICATE-----
-    harbor:
-      protocol: https
-      secretName:
-    svc:
-      type: ClusterIP
-      loadBalancerIP:
-      annotations:
-        {}
-        # azure
-        # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
-        # service.beta.kubernetes.io/azure-load-balancer-internal-subnet: "apps-subnet"
-    # OpenShift Route configuration
-    route:
-      enabled: true
-      termination: passthrough
-      host:
-      tls:
-        #certificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #caCertificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #destinationCACertificate: |
-        #  -----BEGIN CERTIFICATE-----
-        #  -----END CERTIFICATE-----
-        #key: |
-        #  -----BEGIN PRIVATE KEY-----
-        #  -----END PRIVATE KEY-----
-    ingress:
+  updateStrategy:
+    type: RollingUpdate
+global:
+  cattle:
+    psp:
       enabled: false
-      host: # MUST be set, if ingress is enabled
-      ingressClassName: ""
-      path: "/"
-      annotations:
-        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-        # kubernetes.io/ingress.class: my-nginx
-        # nginx.ingress.kubernetes.io/whitelist-source-range: "1.1.1.1"
-        # nginx.ingress.kubernetes.io/rewrite-target: /
-        # nginx.ingress.kubernetes.io/enable-rewrite-log: "true"
-        # only for end-to-end tls conf - ingress-nginx accepts backend self-signed cert
-      tls: false
-      secretName: # my-tls-secret
-    internal: # this is used for internal communication. Please use the SAME CA for all the components (controller, scanner, adapter and enforcer)
-      certificate:
-        secret: "" 
-        keyFile: tls.key
-        pemFile: tls.crt
-        caFile: ca.crt # must be the same CA for all internal.
-  updater:
-    # If false, cve updater will not be installed
-    enabled: true
-    secure: false
-    cacert: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    image:
-      registry: ""
-      repository: neuvector/updater
-      imagePullPolicy: IfNotPresent
-      tag: 0.0.4
-      hash:
-    schedule: "0 0 * * *"
-    priorityClassName:
-    resources:
-      {}
-      # limits:
-      #   cpu: 100m
-      #   memory: 256Mi
-      # requests:
-      #   cpu: 100m
-      #   memory: 256Mi
-    podLabels: {}
-    podAnnotations: {}
-    tolerations: []
-    nodeSelector:
-      {}
-      # key1: value1
-      # key2: value2
-    runAsUser: # MUST be set for Rancher hardened cluster
-  scanner:
-    enabled: true
-    replicas: 3
-    dockerPath: ""
-    strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 0
-    image:
-      registry: ""
-      repository: neuvector/scanner
-      imagePullPolicy: Always
-      tag: "6"
-      hash:
-    priorityClassName:
-    resources:
-      {}
-      # limits:
-      #   cpu: 400m
-      #   memory: 2792Mi
-      # requests:
-      #   cpu: 100m
-      #   memory: 2280Mi
-    topologySpreadConstraints: []
-    affinity: {}
-    podLabels: {}
-    podAnnotations: {}
-    env: []
-    tolerations: []
-    nodeSelector:
-      {}
-      # key1: value1
-      # key2: value2
-    runAsUser: # MUST be set for Rancher hardened cluster
-    internal: # this is used for internal communication. Please use the SAME CA for all the components (controller, scanner, adapter and enforcer)
-      certificate:
-        secret: "" 
-        keyFile: tls.key
-        pemFile: tls.crt
-        caFile: ca.crt # must be the same CA for all internal.
-    volumes: 
-    volumeMounts:
-resources:
-  {}
-  # limits:
-  #   cpu: 400m
-  #   memory: 2792Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 2280Mi
-
-runtimePath:
-
-# The following runtime type and socket location are deprecated after 5.3.0.
-# If the socket path is not at the default location, use above 'runtimePath' to specify the location.
-docker:
-  path: /var/run/docker.sock
-
+    systemDefaultRegistry: registry.rancher.com
+    url: https://rancher.bulletproof-labs.com
+    clusterId: c-m-gsq7csdr
+    clusterName: nvt-01
+    rkePathPrefix: ''
+    rkeWindowsPathPrefix: ''
+    systemProjectId: p-dswwk
+  systemDefaultRegistry: registry.rancher.com
+internal:
+  autoGenerateCert: true
+  autoRotateCert: true
+  certmanager:
+    enabled: false
+    secretname: neuvector-internal
 k3s:
   enabled: false
   runtimePath: /run/k3s/containerd/containerd.sock
-
-bottlerocket:
-  enabled: false
-  runtimePath: /run/dockershim.sock
-
-containerd:
-  enabled: false
-  path: /var/run/containerd/containerd.sock
-
-crio:
-  enabled: false
-  path: /var/run/crio/crio.sock
-
-admissionwebhook:
-  type: ClusterIP
-
-crdwebhooksvc:
-  enabled: true
-
-crdwebhook:
-  enabled: false
-  type: ClusterIP
-
 lease:
   enabled: true
+leastPrivilege: false
+manager:
+  affinity: {}
+  certificate:
+    keyFile: tls.key
+    pemFile: tls.pem
+    secret: ''
+  enabled: true
+  env:
+    envs: []
+    ssl: true
+  image:
+    hash: null
+    imagePullPolicy: IfNotPresent
+    repository: rancher/neuvector-manager
+    tag: 5.4.5
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    enabled: true
+    host: nvm01.bulletproof-labs.com
+    ingressClassName: ''
+    path: /
+    secretName: null
+    tls: false
+  nodeSelector: {}
+  podAnnotations: {}
+  podLabels: {}
+  priorityClassName: null
+  probes:
+    enabled: false
+    periodSeconds: 10
+    startupFailureThreshold: 30
+    timeout: 1
+  resources: {}
+  route:
+    enabled: true
+    host: null
+    termination: passthrough
+    tls: null
+  runAsUser: null
+  svc:
+    annotations: {}
+    loadBalancerIP: null
+    nodePort: null
+    type: ClusterIP
+  tolerations: []
+  topologySpreadConstraints: []
+oem: null
+openshift: false
+rbac: true
+registry: docker.io
+resources: {}
+runtimePath: null
+serviceAccount: neuvector
+tag: 5.4.5
