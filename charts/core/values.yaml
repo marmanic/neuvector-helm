@@ -301,8 +301,6 @@ enforcer:
     type: RollingUpdate
 global: # required for rancher authentication (https://<Rancher_URL>/)
   cattle:
-    psp:
-      enabled: false
     url: https://rancher.bulletproof-labs.com
   azure:
     enabled: false
@@ -407,6 +405,8 @@ manager:
   topologySpreadConstraints: []
 oem: null
 openshift: false
+psp:
+  enabled: false
 rbac: true
 registry: docker.io
 resources: {}
