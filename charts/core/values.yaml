@@ -299,18 +299,53 @@ enforcer:
       key: node-role.kubernetes.io/etcd
   updateStrategy:
     type: RollingUpdate
-global:
+global: # required for rancher authentication (https://<Rancher_URL>/)
   cattle:
     psp:
       enabled: false
-    systemDefaultRegistry: registry.rancher.com
     url: https://rancher.bulletproof-labs.com
-    clusterId: c-m-gsq7csdr
-    clusterName: nvt-01
-    rkePathPrefix: ''
-    rkeWindowsPathPrefix: ''
-    systemProjectId: p-dswwk
-  systemDefaultRegistry: registry.rancher.com
+  azure:
+    enabled: false
+    identity:
+      clientId: "DONOTMODIFY" # Azure populates this value at deployment time
+    marketplace:
+      planId: "DONOTMODIFY" # Azure populates this value at deployment time
+    extension:
+      resourceId: "DONOTMODIFY" # application's Azure Resource ID, Azure populates this value at deployment time
+    serviceAccount: csp
+    imagePullSecrets:
+    images:
+      neuvector_csp_pod:
+        tag: latest
+        image: neuvector-billing-azure-by-suse-llc
+        registry: registry.suse.de/suse/sle-15-sp5/update/pubclouds/images
+        imagePullPolicy: IfNotPresent
+      controller:
+        tag: 5.2.4
+        image: controller
+        registry: docker.io/neuvector
+      manager:
+        tag: 5.2.4
+        image: manager
+        registry: docker.io/neuvector
+      enforcer:
+        tag: 5.2.4
+        image: enforcer
+        registry: docker.io/neuvector
+
+  aws:
+    enabled: false
+    accountNumber: ""
+    roleName: ""
+    serviceAccount: csp
+    annotations: {}
+    imagePullSecrets:
+    image:
+      digest: ""
+      repository: neuvector/neuvector-csp-adapter
+      tag: latest
+      imagePullPolicy: IfNotPresent
+
 internal:
   autoGenerateCert: true
   autoRotateCert: true
