@@ -405,8 +405,7 @@ manager:
   topologySpreadConstraints: []
 oem: null
 openshift: false
-psp:
-  enabled: false
+psp: false
 rbac: true
 registry: docker.io
 resources: {}
