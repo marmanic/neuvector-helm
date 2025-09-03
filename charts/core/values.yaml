@@ -111,7 +111,7 @@ controller:
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     enabled: true
     host: nvc01.bulletproof-labs.com
-    ingressClassName: ''
+    ingressClassName: 'nginx'
     path: /
     secretName: null
     tls: false
@@ -376,7 +376,7 @@ manager:
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     enabled: true
     host: nvm01.bulletproof-labs.com
-    ingressClassName: ''
+    ingressClassName: 'nginx'
     path: /
     secretName: null
     tls: false
