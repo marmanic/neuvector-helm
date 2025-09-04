@@ -161,7 +161,7 @@ controller:
   tolerations: []
   topologySpreadConstraints: []
 crdwebhook:
-  enabled: true
+  enabled: false
   type: ClusterIP
 crdwebhooksvc:
   enabled: true
